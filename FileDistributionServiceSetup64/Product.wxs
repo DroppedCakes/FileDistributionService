@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix
+  xmlns="http://schemas.microsoft.com/wix/2006/wi"
+  xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"
+>
+  <Product
+    Id="*"
+    Name="ファイル配布サービス (64ビット版)"
+    Language="1041"
+    Version="1.0.0.0"
+    Manufacturer="UsTEC"
+    UpgradeCode="{D3E7A1CA-6171-4E83-B455-2DF9CC1715A2}">
+    <Package
+      InstallerVersion="200"
+      Compressed="yes"
+      InstallScope="perMachine"
+      Description ="ファイル配布サービス (64ビット版)"
+      Manufacturer="UsTEC"
+      SummaryCodepage="932"
+      Comments="ファイル配布サービス (64ビット版) セットアップパッケージ" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- 「プログラムの追加と削除」のアイコン -->
+    <Property Id="ARPPRODUCTICON">program.ico</Property>
+
+    <!-- インストーラのUI設定 -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <UIRef Id="WixUI_InstallDir" />
+
+    <!-- NT AUTHORITY\LOCAL SERVICE -->
+    <PropertyRef Id="WIX_ACCOUNT_LOCALSERVICE" />
+
+    <!-- End user license agreement -->
+    <!--<WixVariable Id="WixUILicenseRtf" Value="eula.rtf" />-->
+
+    <Feature Id="ProductFeature" Title="ファイル配布サービス (64ビット版)" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR"                   Name="SourceDir">
+
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="BrandProgramFolder"      Name="UsTec">
+          <Directory Id="INSTALLFOLDER"         Name="FileDistributionService" />
+        </Directory>
+      </Directory>
+
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="BrandDataFolder"         Name="UsTec">
+          <Directory Id="ProgramDataFolder"     Name="FileDistributionService">
+            <Directory Id="ConfigDataFolder"    Name="config" />
+            <Directory Id="LogsDataFolder"      Name="logs" />
+            <Directory Id="SourceDataFolder"    Name="source" />
+            <Directory Id="TargetsDataFolder"   Name="targets" />
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <!-- log4net -->
+    <!-- ついでにログディレクトリも作成 -->
+    <ComponentGroup Id="log4net" Directory="INSTALLFOLDER">
+      <Component>
+        <File Source="$(var.SolutionDir)packages\log4net.2.0.14\lib\net45\log4net.dll" />
+
+        <CreateFolder Directory="LogsDataFolder">
+          <util:PermissionEx User="[WIX_ACCOUNT_LOCALSERVICE]" GenericAll="yes" />
+        </CreateFolder>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="supplementals">
+      <!-- サンプル設定ファイル -->
+      <Component Directory="ConfigDataFolder">
+        <File Id="sample_config.xml" Source="$(var.SolutionDir)documents\sample-config.xml" />
+      </Component>
+
+      <Component Directory="INSTALLFOLDER">
+        <File Id="install.state" Source="empty.txt" Name="install.state" />
+
+        <!-- 配布元データフォルダ -->
+        <CreateFolder Directory="SourceDataFolder">
+          <util:PermissionEx User="[WIX_ACCOUNT_LOCALSERVICE]" GenericAll="yes" />
+        </CreateFolder>
+
+        <!-- 配布先データフォルダ -->
+        <CreateFolder Directory="TargetsDataFolder">
+          <util:PermissionEx User="[WIX_ACCOUNT_LOCALSERVICE]" GenericAll="yes" />
+        </CreateFolder>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <!-- log4net -->
+      <ComponentGroupRef Id="log4net" />
+
+      <!-- 補助ファイル・補助フォルダ等 -->
+      <ComponentGroupRef Id="supplementals" />
+
+      <!-- サービス本体 -->
+      <Component>
+        <!-- 実行ファイル -->
+        <File Source="$(var.FileDistributionService.TargetPath)" KeyPath="yes" />
+
+        <!-- 設定ファイル -->
+        <File Source="$(var.FileDistributionService.ProjectDir)app.config" Name="$(var.FileDistributionService.TargetFileName).config" />
+
+        <ServiceInstall
+          Id="ServiceInstaller"
+          Type="ownProcess"
+          Vital="yes"
+          Name="UsTec.FileDistributionService"
+          DisplayName="ファイル配布サービス 64ビット版"
+          Description="ファイル配布サービス 64ビット版"
+          Start="auto"
+          Account="[WIX_ACCOUNT_LOCALSERVICE]"
+          ErrorControl="ignore"
+          Interactive="no">
+        </ServiceInstall>
+
+        <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="UsTec.FileDistributionService" Wait="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Icon Id="program.ico" SourceFile="$(var.FileDistributionService.ProjectDir)Resources\program.ico" />
+  </Fragment>
+</Wix>

@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!--
+  設定ファイルは
+  実行ファイルと同じディレクトリの FileDistributionService.exe.config 内
+  アプリケーション設定 ConfigurationDirectoryPath で示されるディレクトリ内に
+  複数配置することができる
+
+  また下記の通り
+  1つの設定ファイル内に複数の配布設定を設けることもできる
+
+  プログラムは起動時に上記ディレクトリ内に存在する全ての*.xmlファイルを設定ファイルとして読み込む
+-->
+<distributor>
+  <!--
+    サンプル設定1
+      interval属性
+        処理間隔をミリ秒単位で指定する
+        省略可
+        省略すると60,000ミリ秒(1分)
+        ゼロまたは負の値を設定してはならない
+        実用上、10,000以下に設定することはなさそう
+      path属性
+        複製元ディレクトリへのパスを指定する
+        省略不可
+        pathで示されるディレクトリは存在しており、本プログラムによりファイル検索、読み取り、削除が可能であること
+      pattern属性
+        ファイル名のワイルドカードを指定する
+        省略可
+        省略すると全ファイル
+  -->
+  <distribution path="C:\ProgramData\UsTec\FileDistributionService\source" interval="5000" pattern="*.xml">
+    <!--
+      overwrite 属性
+        同名のファイルを上書きするならtrue
+        同名のファイルを上書きしないならfalse
+        省略可
+        省略するとfalse
+        この設定がfalseかつ同名のファイルが存在する場合はエラー
+      path属性
+        複製先ディレクトリへのパスを指定する
+        省略不可
+        ディレクトリが存在しなければ作成する
+    -->
+    <target path="C:\ProgramData\UsTec\FileDistributionService\targets\1" overwrite="false" />
+    <target path="C:\ProgramData\UsTec\FileDistributionService\targets\2" overwrite="true" />
+    <target path="C:\ProgramData\UsTec\FileDistributionService\targets\3" overwrite="false" />
+  </distribution>
+
+  <!--
+    サンプル設定2
+      複数の複製設定を指定できる
+      sourceやtargetが他の設定と重複してもよい
+      これにより
+      多段階でファイルを増殖・配布することができる
+
+      ただし
+      本プログラムはファイル配布完了後に配布元ファイルを削除するので競合に注意
+  -->
+  <distribution path="C:\ProgramData\UsTec\FileDistributionService\source">
+    <target path="C:\ProgramData\UsTec\FileDistributionService\targets\1" />
+    <target path="C:\ProgramData\UsTec\FileDistributionService\targets\2" />
+    <target path="C:\ProgramData\UsTec\FileDistributionService\targets\3" />
+  </distribution>
+</distributor>
